@@ -7,3 +7,4 @@ fpdf
 Pillow
 requests
 anthropic
+gunicorn
