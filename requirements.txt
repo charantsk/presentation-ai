@@ -8,3 +8,4 @@ requests
 anthropic
 gunicorn
 Flask-SQLAlchemy
+playwright
