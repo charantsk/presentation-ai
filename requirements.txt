@@ -1,5 +1,4 @@
 flask
-llama-cpp-python
 PyYAML
 python-pptx
 python-docx
