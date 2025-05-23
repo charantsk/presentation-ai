@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Presentation Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+    <style>
+        .preview-thumbnail {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .preview-thumbnail:hover {
+            transform: scale(1.05);
+        }
+
+        .selected-thumbnail {
+            border: 3px solid #4f46e5;
+        }
+
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+    <script>
+        sessionStorage.setItem('userEmail', "{{ email }}");
+        sessionStorage.setItem('userToken', "{{ token }}");
+    </script>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-indigo-700">AI Presentation Generator</h1>
+            <p class="text-gray-600 mt-2">Create professional presentations in seconds with AI</p>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <form id="generatorForm" class="space-y-4">
+                <div>
+                    <label for="topic" class="block text-sm font-medium text-gray-700 mb-1">Presentation Topic</label>
+                    <input type="text" id="topic" name="topic"
+                        placeholder="Enter a topic (e.g., 'Climate Change' or '5 slides on Quantum Computing')"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        required />
+                    <p class="text-xs text-gray-500 mt-1">Tip: Add the number of slides (e.g., "5 slides on Machine
+                        Learning")</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">File Type</label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <label
+                            class="flex items-center p-3 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="file_type" value="pptx" class="mr-2" checked />
+                            <span>PowerPoint (PPTX)</span>
+                        </label>
+                        <label
+                            class="flex items-center p-3 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="file_type" value="pdf" class="mr-2" />
+                            <span>PDF</span>
+                        </label>
+                        <label
+                            class="flex items-center p-3 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="file_type" value="docx" class="mr-2" />
+                            <span>Word (DOCX)</span>
+                        </label>
+                        <label
+                            class="flex items-center p-3 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50">
+                            <input type="radio" name="file_type" value="html" class="mr-2" />
+                            <span>HTML</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="htmlOptions" class="hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">HTML Presentation Style</label>
+                    <div id="presentationStyles" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="preview-thumbnail border border-gray-300 rounded-md p-3 text-center selected-thumbnail"
+                            data-style="minimalist">
+                            <img src="/static/previews/minimalist.png" alt="Minimalist Style"
+                                class="w-full h-32 object-cover" />
+                            <p class="mt-2">Minimalist</p>
+                        </div>
+                        <div class="preview-thumbnail border border-gray-300 rounded-md p-3 text-center"
+                            data-style="modern">
+                            <img src="/static/previews/modern.png" alt="Modern Style"
+                                class="w-full h-32 object-cover" />
+                            <p class="mt-2">Modern</p>
+                        </div>
+                        <div class="preview-thumbnail border border-gray-300 rounded-md p-3 text-center"
+                            data-style="professional">
+                            <img src="/static/previews/professional.png" alt="Professional Style"
+                                class="w-full h-32 object-cover" />
+                            <p class="mt-2">Professional</p>
+                        </div>
+                        <div class="preview-thumbnail border border-gray-300 rounded-md p-3 text-center" data-style="corporate">
+                            <img src="/static/previews/corporate.png" alt="Corporate Style" class="w-full h-32 object-cover" />
+                            <p class="mt-2 text-sm font-medium">Corporate</p>
+                        </div>
+                        <div class="preview-thumbnail border border-gray-300 rounded-md p-3 text-center" data-style="executive">
+                            <img src="/static/previews/executive.png" alt="Executive Style" class="w-full h-32 object-cover" />
+                            <p class="mt-2 text-sm font-medium">Executive</p>
+                        </div>
+                    </div>
+                    <input type="hidden" name="html_presentation_type" id="html_presentation_type" value="minimalist" />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Options</label>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="include_images" name="include_images" value="true" checked
+                            class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" />
+                        <label for="include_images" class="ml-2 block text-sm text-gray-900">Include images in
+                            presentation</label>
+                    </div>
+                </div>
+
+                <div class="text-center pt-4">
+                    <button type="submit" id="generateBtn"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                        Generate Presentation
+                    </button>
+                </div>
+            </form>
+            <div class="text-center mt-4">
+                <a href="{{ url_for('my_files') }}"
+                    class="bg-green-600 hover:bg-green-700 text-white font-medium px-6 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                    Show Generated Files
+                </a>
+            </div>            
+        </div>
+        <div class="text-center mt-4">
+            <button id="logoutBtn"
+                class="bg-red-600 hover:bg-red-700 text-white font-medium px-6 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                Logout
+            </button>  
+        </div>
+
+        <div id="loadingContainer" class="hidden bg-white rounded-lg shadow-lg p-6 mb-8 text-center">
+            <div class="loader mb-4"></div>
+            <p class="text-gray-700">Generating your presentation...</p>
+            <p class="text-gray-500 text-sm mt-2">This may take a minute or two</p>
+        </div>
+
+        <div id="previewContainer" class="hidden bg-white rounded-lg shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Presentation Preview</h2>
+            <div id="previewSlides"></div>
+            <div id="previewImages" class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 hidden"></div>
+            <div class="text-center mt-6">
+                <a id="downloadLink" href="#"
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                    Download
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const fileTypeInputs = document.querySelectorAll('input[name="file_type"]');
+            const htmlOptions = document.getElementById("htmlOptions");
+            const thumbnails = document.querySelectorAll(".preview-thumbnail");
+            const hiddenStyleInput = document.getElementById("html_presentation_type");
+            const includeImagesCheckbox = document.getElementById("include_images");
+
+            // Toggle HTML options
+            fileTypeInputs.forEach((input) => {
+                input.addEventListener("change", function () {
+                    if (this.value === "html") {
+                        htmlOptions.classList.remove("hidden");
+                    } else {
+                        htmlOptions.classList.add("hidden");
+                    }
+                });
+            });
+
+            // Handle thumbnail selection
+            thumbnails.forEach((thumb) => {
+                thumb.addEventListener("click", function () {
+                    thumbnails.forEach((t) => t.classList.remove("selected-thumbnail"));
+                    this.classList.add("selected-thumbnail");
+                    hiddenStyleInput.value = this.dataset.style;
+                });
+            });
+
+            // Form submission
+            document
+                .getElementById("generatorForm")
+                .addEventListener("submit", function (e) {
+                    e.preventDefault();
+
+                    // Show loading
+                    document.getElementById("loadingContainer").classList.remove("hidden");
+                    document.getElementById("previewContainer").classList.add("hidden");
+
+                    // Create FormData
+                    const formData = new FormData(this);
+                    formData.append(
+                        "include_images",
+                        includeImagesCheckbox.checked ? "true" : "false"
+                    );
+
+                    // Submit form
+                    fetch("/generate", {
+                        method: "POST",
+                        body: formData,
+                    })
+                        .then((response) => response.json())
+                        .then((data) => {
+                            document
+                                .getElementById("loadingContainer")
+                                .classList.add("hidden");
+
+                            if (data.success) {
+                                // Show preview
+                                document
+                                    .getElementById("previewContainer")
+                                    .classList.remove("hidden");
+                                document.getElementById("downloadLink").href =
+                                    data.file_url;
+
+                                // Display slides preview
+                                const previewSlides = document.getElementById(
+                                    "previewSlides"
+                                );
+                                previewSlides.innerHTML = "";
+
+                                if (
+                                    data.preview &&
+                                    data.preview.presentation &&
+                                    data.preview.presentation.slides
+                                ) {
+                                    const slides =
+                                        data.preview.presentation.slides;
+                                    slides.forEach((slide, index) => {
+                                        const slideDiv = document.createElement(
+                                            "div"
+                                        );
+                                        slideDiv.className =
+                                            "border border-gray-300 rounded-md p-4 mb-4";
+
+                                        const slideTitle = document.createElement(
+                                            "h3"
+                                        );
+                                        slideTitle.className =
+                                            "text-lg font-medium text-gray-800 mb-2";
+                                        slideTitle.textContent = `Slide ${index + 1
+                                            }: ${slide.title}`;
+                                        slideDiv.appendChild(slideTitle);
+
+                                        if (slide.bullets && slide.bullets.length > 0) {
+                                            const bulletList = document.createElement(
+                                                "ul"
+                                            );
+                                            bulletList.className =
+                                                "list-disc pl-6 text-gray-600";
+
+                                            slide.bullets.forEach((bullet) => {
+                                                const bulletItem =
+                                                    document.createElement("li");
+                                                bulletItem.className = "mb-1";
+                                                bulletItem.textContent = bullet;
+                                                bulletList.appendChild(bulletItem);
+                                            });
+
+                                            slideDiv.appendChild(bulletList);
+                                        }
+
+                                        previewSlides.appendChild(slideDiv);
+                                    });
+                                }
+
+                                // Show HTML style previews if available
+                                const previewImages = document.getElementById(
+                                    "previewImages"
+                                );
+                                previewImages.innerHTML = "";
+
+                                if (
+                                    data.preview_images &&
+                                    Object.keys(data.preview_images).length > 0
+                                ) {
+                                    previewImages.classList.remove("hidden");
+
+                                    for (const [style, imgUrl] of Object.entries(
+                                        data.preview_images
+                                    )) {
+                                        const img = document.createElement("img");
+                                        img.src = imgUrl;
+                                        img.alt = `${style} preview`;
+                                        img.className =
+                                            "rounded-md shadow-md w-full h-40 object-cover";
+                                        previewImages.appendChild(img);
+                                    }
+                                } else {
+                                    previewImages.classList.add("hidden");
+                                }
+                            } else {
+                                alert(data.message || "Failed to generate.");
+                            }
+                        })
+                        .catch((error) => {
+                            document
+                                .getElementById("loadingContainer")
+                                .classList.add("hidden");
+                            alert("Error: " + error.message);
+                        });
+                });
+
+            document.getElementById('logoutBtn').addEventListener('click', function () {
+            // Remove sessionStorage items
+            sessionStorage.removeItem('userEmail');
+            sessionStorage.removeItem('userToken');
+
+            // Redirect to Flask logout endpoint
+            window.location.href = '/logout';
+            });
+        });
+    </script>
+</body>
+
+</html>
