@@ -22,4 +22,4 @@ class Config:
 
     ATOM_AUTHENTICATION = False
 
-    CLAUDE_API_KEY = '#'
+    CLAUDE_API_KEY = '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'
